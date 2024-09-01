@@ -1,0 +1,113 @@
+#include "stm32f10x.h"
+#include "stm32f10x_tim.h"
+#include "stm32f10x_gpio.h"
+#include "stm32f10x_rcc.h"
+#include "stm32f10x.h"
+#include "delay.h"
+void pwminit(void);
+void GPIOinit(void);
+void MOTOR_CONTROLL_CONFIG();
+void IR_SENSOR_CONFIG();
+GPIO_InitTypeDef gpioinit;
+void DelayInit();
+int L,M,R;
+
+GPIO_InitTypeDef Z; //for motor R
+int main(void)
+{
+DelayInit();
+MOTOR_CONTROLL_CONFIG();
+GPIOinit();
+pwminit();
+IR_SENSOR_CONFIG();
+
+while(1)
+{
+L=GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_2);//LEFT
+
+M=GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_3);//MID
+R=GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_4);//RIGHT
+//......... GO FORWARD ............//
+       if(L==0&&M==1&&R==0)
+{
+GPIO_WriteBit(GPIOA,GPIO_Pin_8,0);
+GPIO_WriteBit(GPIOA,GPIO_Pin_9,1);
+GPIO_WriteBit(GPIOA,GPIO_Pin_10,0);
+GPIO_WriteBit(GPIOA,GPIO_Pin_11,1);
+DelayMs(5);
+}
+else if(L==1&&M==0&&R==0)
+{
+GPIO_WriteBit(GPIOA,GPIO_Pin_8,0);
+GPIO_WriteBit(GPIOA,GPIO_Pin_9,1);
+GPIO_WriteBit(GPIOA,GPIO_Pin_10,0);
+GPIO_WriteBit(GPIOA,GPIO_Pin_11,0);
+DelayMs(5);
+}
+else if(L==0&&M==0&&R==1)
+{
+GPIO_WriteBit(GPIOA,GPIO_Pin_8,0);
+GPIO_WriteBit(GPIOA,GPIO_Pin_9,0);
+GPIO_WriteBit(GPIOA,GPIO_Pin_10,0);
+GPIO_WriteBit(GPIOA,GPIO_Pin_11,1);
+DelayMs(5);
+}
+else
+{
+GPIO_WriteBit(GPIOA,GPIO_Pin_8,0);
+GPIO_WriteBit(GPIOA,GPIO_Pin_9,0);
+GPIO_WriteBit(GPIOA,GPIO_Pin_10,0);
+GPIO_WriteBit(GPIOA,GPIO_Pin_11,0);
+DelayMs(5);
+}
+}
+
+}
+void GPIOinit(void)
+{
+RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA,ENABLE);
+gpioinit.GPIO_Pin= GPIO_Pin_1;
+gpioinit.GPIO_Mode= GPIO_Mode_AF_PP;
+gpioinit.GPIO_Speed=GPIO_Speed_10MHz;
+GPIO_Init(GPIOA, &gpioinit);
+}
+void pwminit(void)
+{
+TIM_TimeBaseInitTypeDef timinit;
+TIM_OCInitTypeDef ocinit;
+RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+timinit.TIM_Prescaler = 9;
+timinit.TIM_Period=7199;
+timinit.TIM_ClockDivision=TIM_CKD_DIV1;
+timinit.TIM_CounterMode = TIM_CounterMode_Up;
+TIM_TimeBaseInit(TIM2, &timinit);
+TIM_Cmd(TIM2, ENABLE);
+ocinit.TIM_OCMode=TIM_OCMode_PWM1 ;
+ocinit.TIM_OutputState=TIM_OutputState_Enable;
+ocinit.TIM_OCPolarity=TIM_OCPolarity_High;
+ocinit.TIM_Pulse=2160;
+TIM_OC2Init(TIM2, &ocinit);
+
+TIM_OC2PreloadConfig(TIM2, TIM_OCPreload_Enable);
+}
+
+void MOTOR_CONTROLL_CONFIG()
+{
+RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA,ENABLE);
+//motor R
+Z.GPIO_Mode=GPIO_Mode_Out_PP;
+Z.GPIO_Pin=GPIO_Pin_8|GPIO_Pin_9|GPIO_Pin_10|GPIO_Pin_11;
+Z.GPIO_Speed=GPIO_Speed_2MHz;
+GPIO_Init(GPIOA,&Z);
+}
+void IR_SENSOR_CONFIG()
+{
+RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA,ENABLE);
+// sensor  input
+  Z.GPIO_Mode=GPIO_Mode_IN_FLOATING;
+ Z.GPIO_Pin=GPIO_Pin_2|GPIO_Pin_3|GPIO_Pin_4;     //left
+  GPIO_Init(GPIOA,&Z);
+
+}
+
+
